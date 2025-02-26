@@ -1,0 +1,185 @@
+module alchitry_top (
+    input clk,              // 100MHz clock
+    input rst_n,            // reset button (active low)
+    output led[8],          // 8 user controllable LEDs
+    input usb_rx,           // USB->Serial input
+    output usb_tx,          // USB->Serial output
+    output io_led[3][8],
+    output io_segment[8],
+    output io_select[4],
+    input io_button[5],
+    input io_dip[3][8]
+) {
+    
+    sig rst                 // reset signal
+    sig slow_clock
+    const SIZE = 16
+    const SLOW_CLOCK_DEFAULT_SPEED = $is_sim() ? 8 : 28
+    const CLK_FREQ = $is_sim() ? 1000 : 100000000 // put 1000 only for sim, 100M on hardware
+
+    
+    enum States {
+        RUN,
+        STOP,
+        FASTER,
+        SLOWER,
+        INCREASE,
+        DECREASE,
+        UPDATE,
+        IDLE
+    }
+    
+    .clk(clk) {
+        // The reset conditioner is used to synchronize the reset signal to the FPGA
+        // clock. This ensures the entire FPGA comes out of reset at the same time.
+        reset_conditioner reset_cond
+        
+        //why is the found here and not at .rst?
+        edge_detector slow_clock_edge(#RISE(1), #FALL(0))
+        
+        // instantiate 5 edge detectors, one for each button 
+        edge_detector io_button_edge[5](#RISE(5x{{1}}), #FALL(5x{{0}}))
+        // instantiate 5 conditioners, one for each button
+        button_conditioner io_button_cond[5](#CLK_FREQ(5x{{CLK_FREQ}}))
+        
+        .rst(rst) {
+            //clock dffs
+            dff counter[SIZE]
+            dff speed_pointer[$clog2(SIZE)](#INIT(SLOW_CLOCK_DEFAULT_SPEED))
+            dff slow_clock_enable(#INIT(0))
+            
+            //state dffs
+            dff states[$width(States)](#INIT(States.IDLE))  //why do we get the width, then init to IDLE?
+            dff current_value[SIZE](#INIT(0))
+            dff current_delta[$clog2(SIZE) + 1](#INIT(1))  // why do we need + 1 bits?
+         
+            
+            adder adder(#SIZE(SIZE))
+             
+
+            
+        }
+    }
+    
+    always {
+        
+        // -------- defaults:
+        //state
+        states.d = states.q
+        current_delta.d = current_delta.q
+        current_value.d = current_value.q
+        
+        //clock
+        slow_clock_enable.d = slow_clock_enable.q
+        speed_pointer.d = speed_pointer.q
+        
+        //adder
+        adder.a = 0
+        adder.b = 0
+        adder.subtract = 0
+        
+        // -------- clock
+        counter.d = counter.q + 1
+        slow_clock = counter.q[speed_pointer.q]
+        slow_clock_edge.in = slow_clock
+               
+        
+        case (slow_clock_enable.q){
+            0:
+                slow_clock_edge.in = 0
+            1:
+                slow_clock_edge.in = slow_clock
+            default:
+                slow_clock_edge.in = 0
+        }
+        
+        // ----------- Finite State Machine
+        case(states.q){
+            States.IDLE:
+                if (slow_clock_edge.out){
+                    states.d = States.UPDATE
+                } else if(io_button_edge.out[1]){
+                    if (~|slow_clock_enable.q){ // if slow_clock is not currently enabled, run
+                    states.d = States.RUN
+                    } else {
+                    states.d = States.STOP
+                    }
+                } else if(io_button_edge.out[0]){
+                    states.d = States.FASTER
+                } else if(io_button_edge.out[2]){
+                    states.d = States.SLOWER
+                } else if(io_button_edge.out[4]){
+                    states.d = States.INCREASE
+                } else if(io_button_edge.out[3]){
+                    states.d = States.DECREASE
+                } else {
+                    //input
+                }
+            
+            
+            States.UPDATE:
+                current_value.d = current_value.q + current_delta.q
+                states.d = States.IDLE
+            States.RUN:
+                slow_clock_enable.d = 1
+                states.d = States.IDLE
+            States.SLOWER:
+                if (speed_pointer.q < SIZE -1){
+                    speed_pointer.d = speed_pointer.q + 1
+                }
+                states.d = States.IDLE
+            States.FASTER:
+                if (speed_pointer.q > 0){
+                    speed_pointer.d = speed_pointer.q - 1
+                }
+                states.d = States.IDLE
+            States.INCREASE:
+               // simple addition, did not consider negative overflow
+               current_delta.d = current_delta.q + 1 
+               states.d = States.IDLE
+            States.DECREASE:
+               // simple subtraction, did not consider negative overflow
+               current_delta.d = current_delta.q - 1 
+               states.d = States.IDLE 
+            States.STOP:
+                slow_clock_enable.d = 0 
+                states.d = States.IDLE 
+                
+        }
+        
+        
+        
+        reset_cond.in = ~rst_n     // input raw inverted reset signal
+        rst = reset_cond.out       // conditioned reset
+        
+        led = 8x{0}
+        
+        usb_tx = usb_rx            // echo the serial data
+        
+        
+        
+        
+        io_button_cond.in = io_button
+        io_button_edge.in = io_button_cond.out
+        
+        //io_led[0] = 8h00
+        io_led[1] = 8b00000010
+        io_led[2] = 8b00000011
+        io_segment = 0
+        io_select = 4hF
+        
+        
+        
+        //adder.a = io_dip[0] 
+        //adder.b = io_dip[1] 
+        //adder.subtract = io_dip[2][0]
+        //io_led[0] = adder.s 
+        //led[2:0] = c{adder.z, adder.v, adder.n} // signal concatenation 
+        
+        led = c{slow_clock, 2b0, speed_pointer.q} // led[7] shows the `slow_clock` signal, led[5:0] shows the content of speed_pointer dff
+        io_led = {c{4b0,current_delta.q[3:0]} ,current_value.q[SIZE-1:SIZE-8], current_value.q[7:0]}
+        
+        
+        
+    }
+}

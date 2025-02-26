@@ -1,0 +1,38 @@
+module adder #(
+    SIZE = 4
+)(
+    input clk,              // clock
+    input rst,              // reset
+    input a[SIZE],
+    input b[SIZE],
+    input subtract[SIZE],   //0 to add, 1 to subtract
+    output s[SIZE],
+    output v[1],            //overflow
+    output n[1],            //negative
+    output z[1]             //zero
+) 
+{
+    signed sig sum_result[SIZE]
+    sig overflow[1]
+    always {
+        
+        //if (subtract == 0) sum_result = a + b; else sum_result = a - b;
+        sum_result = (subtract == 0 ? a+b : a-b)
+        s = sum_result
+        if (a[SIZE - 1 ] == 1 && b[SIZE - 1] == 1) {  
+            //negative overflow
+            overflow = 1
+        } else if ((a[SIZE - 2 ] == 1 || b[SIZE - 2] == 1) && sum_result[SIZE - 2] != 1){
+            //postive overflow
+            overflow = 1
+        } else {
+            overflow = 0
+        }
+            
+        
+        v = overflow
+        //need to check if negative bit was overflowed?
+        n = sum_result[SIZE - 1]
+        z = ~|sum_result
+    }
+}
