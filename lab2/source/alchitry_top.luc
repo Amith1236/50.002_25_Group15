@@ -16,6 +16,10 @@ module alchitry_top (
     const SIZE = 16
     const SLOW_CLOCK_DEFAULT_SPEED = $is_sim() ? 8 : 28
     const CLK_FREQ = $is_sim() ? 1000 : 100000000 // put 1000 only for sim, 100M on hardware
+    const SEVEN_SEG_DIV = $is_sim() ? 3 : 16
+    
+    bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1))
+
 
     
     enum States {
@@ -55,7 +59,8 @@ module alchitry_top (
          
             
             adder adder(#SIZE(SIZE))
-             
+            
+            multi_seven_seg seg(#DIV(SEVEN_SEG_DIV)) 
 
             
         }
@@ -118,7 +123,10 @@ module alchitry_top (
             
             
             States.UPDATE:
-                current_value.d = current_value.q + current_delta.q
+                //current_value.d = current_value.q + current_delta.q
+                adder.a = current_value.q
+                adder.b = current_delta.q
+                current_value.d = adder.s
                 states.d = States.IDLE
             States.RUN:
                 slow_clock_enable.d = 1
@@ -179,7 +187,11 @@ module alchitry_top (
         led = c{slow_clock, 2b0, speed_pointer.q} // led[7] shows the `slow_clock` signal, led[5:0] shows the content of speed_pointer dff
         io_led = {c{4b0,current_delta.q[3:0]} ,current_value.q[SIZE-1:SIZE-8], current_value.q[7:0]}
         
+        decimal_renderer.value = current_value.q // convert the binary output to decimal value 
+        seg.values = decimal_renderer.digits // plug the decimal digits into 7seg controller
         
+        io_segment = ~seg.seg
+        io_select = ~seg.sel
         
     }
 }
