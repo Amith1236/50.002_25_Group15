@@ -5,21 +5,26 @@ module adder #(
     input rst,              // reset
     input a[SIZE],
     input b[SIZE],
-    input subtract[SIZE],   //0 to add, 1 to subtract
+    input subtract[1],   //0 to add, 1 to subtract
     output s[SIZE],
     output v[1],            //overflow
     output n[1],            //negative
     output z[1]             //zero
 ) 
 {
-    signed sig sum_result[SIZE]
+    sig sum_result[SIZE]
+    sig b_twos_complement [SIZE]  // Stores two's complement of B
     sig overflow[1]
     always {
         
         //if (subtract == 0) sum_result = a + b; else sum_result = a - b;
-        sum_result = (subtract == 0 ? a+b : a-b)
+        
+        b_twos_complement = subtract ? ~b + 1 : b;
+
+        sum_result = a + b_twos_complement
         s = sum_result
-        if (a[SIZE - 1 ] == 1 && b[SIZE - 1] == 1) {  
+        overflow = 0
+        /*if (a[SIZE - 1 ] == 1 && b[SIZE - 1] == 1) {  
             //negative overflow
             overflow = 1
         } else if ((a[SIZE - 2 ] == 1 || b[SIZE - 2] == 1) && sum_result[SIZE - 2] != 1){
@@ -27,10 +32,11 @@ module adder #(
             overflow = 1
         } else {
             overflow = 0
-        }
+        }*/
             
         
         v = overflow
+        v = (a[SIZE-1] == b_twos_complement[SIZE-1]) && (sum_result[SIZE-1] != a[SIZE-1])
         //need to check if negative bit was overflowed?
         n = sum_result[SIZE - 1]
         z = ~|sum_result

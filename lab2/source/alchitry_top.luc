@@ -59,6 +59,7 @@ module alchitry_top (
          
             
             adder adder(#SIZE(SIZE))
+            adder delta_adder(#SIZE($clog2(SIZE) + 1))
             
             multi_seven_seg seg(#DIV(SEVEN_SEG_DIV)) 
 
@@ -82,6 +83,10 @@ module alchitry_top (
         adder.a = 0
         adder.b = 0
         adder.subtract = 0
+        
+        delta_adder.a = 0
+        delta_adder.b = 0
+        delta_adder.subtract = 0
         
         // -------- clock
         counter.d = counter.q + 1
@@ -124,10 +129,34 @@ module alchitry_top (
             
             States.UPDATE:
                 //current_value.d = current_value.q + current_delta.q
+                /*
                 adder.a = current_value.q
                 adder.b = current_delta.q
+                if (current_delta.q[$clog2(SIZE)] == 0){
+                    adder.subtract = 0
+                } else {
+                    adder.subtract = 1
+                }
                 current_value.d = adder.s
-                states.d = States.IDLE
+                states.d = States.IDLE*/
+                
+                // add delta value to the current counter value (when the slow clock edge rises) 
+
+                adder.a = current_value.q // current counter value
+                // need to sign extend delta
+                adder.b = c{ (SIZE-$clog2(SIZE)-1)x{current_delta.q[$clog2(SIZE)]}, current_delta.q }
+                adder.subtract = 0
+                //adder.subtract = 0 ? current_delta.q[$clog2(SIZE)] == 0 : 1
+                if (~adder.n & ~adder.v){
+                   current_value.d = adder.s // only add if value is non-negative and no oveflow
+                }
+                else if (~adder.v){
+                   current_value.d = 0 // else, negative but no overflow, so zero out the next counter value
+                }
+
+                // if there is overflow, do nothing
+                
+                states.d = States.IDLE // go back to the IDLE state (next state)
             States.RUN:
                 slow_clock_enable.d = 1
                 states.d = States.IDLE
@@ -143,11 +172,28 @@ module alchitry_top (
                 states.d = States.IDLE
             States.INCREASE:
                // simple addition, did not consider negative overflow
-               current_delta.d = current_delta.q + 1 
+               
+               //current_delta.d = current_delta.q + 1 
+                delta_adder.a = 1
+                delta_adder.b = current_delta.q
+                delta_adder.subtract = 0
+                if (~delta_adder.n & ~delta_adder.v){
+                   current_delta.d = delta_adder.s // only add if value is non-negative and no oveflow
+                }
+                
+               
                states.d = States.IDLE
             States.DECREASE:
                // simple subtraction, did not consider negative overflow
-               current_delta.d = current_delta.q - 1 
+               
+               //current_delta.d = current_delta.q - 1 
+                delta_adder.a = current_delta.q
+                delta_adder.b = 1
+                delta_adder.subtract = 1
+                if (~delta_adder.v){
+                    
+                   current_delta.d = delta_adder.s // else, negative but no overflow, so zero out the next counter value
+                }
                states.d = States.IDLE 
             States.STOP:
                 slow_clock_enable.d = 0 
