@@ -8,16 +8,80 @@ module alu (
     output n
 ) {
     
-    //adder adder(#SIZE(32))
+    adder add(#SIZE(32))
+    multiplier mul
+    boolean bool(#SIZE(32))
+    shifter shft
+    compare cmp
+    
     
     always {
         // implement alu logic here
-        out = 0 
-        z = 0
-        v = 0 
-        n = 0    
+          
         
+        //setting inputs for all modules
+        add.a = a
+        add.b = b
+        add.alufn_signal = alufn
         
+        mul.a = a
+        mul.b = b
+        
+        bool.a = a
+        bool.b = b
+        bool.alufn = alufn
+        
+        shft.a = a
+        shft.b = b[4:0]
+        shft.alufn = alufn
+        
+        // linking compare to adder
+        cmp.z = add.z
+        cmp.v = add.v
+        cmp.n = add.n
+        cmp.alufn = alufn
+        /*
+        
+        add 000000
+        sub 000001
+        mul 000010
+        and 011000
+        or  011110
+        xor 010110
+        a ldr 011010
+        shl 100000
+        shr 100001
+        sra 100011
+        cmpeq 110011
+        cmplt 110101
+        cmple 110111
+        
+        */
+        
+        case (alufn) {
+            6b000000:  out = add.out             // ADD
+            6b000001:  out = add.out             // SUB
+            6b000010:  out = mul.mul             // MUL
+            
+            6b011000:  out = bool.bool           // AND
+            6b011110:  out = bool.bool           // OR
+            6b010110:  out = bool.bool           // XOR
+            6b011010:  out = bool.bool           // A (bypass A)
+            
+            6b100000:  out = shft.shift          // SHL (Logical Left Shift)
+            6b100001:  out = shft.shift          // SHR (Logical Right Shift)
+            6b100011:  out = shft.shift          // SRA (Arithmetic Right Shift)
+            
+            6b110011: out = cmp.cmp              // CMPEQ
+            6b110101: out = cmp.cmp              // CMPLT
+            6b110111: out = cmp.cmp              // CMPLE
+
+            default: out = 0                  // Default case (NOP)
+        }
+        
+        z = add.z
+        v = add.v
+        n = add.n
         
     }
 }
