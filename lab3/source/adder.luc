@@ -18,7 +18,8 @@ module adder #(
         rca.a = a
         rca.b = xb
         rca.cin = alufn_signal[0]
-        // implement adder/subtractor unit logic here
+        
+        
         out = rca.s
         z = ~| rca.s
         v = (a[SIZE - 1] & xb[SIZE -1] & ~rca.s[SIZE -1]) | (~a[SIZE - 1] & ~b[SIZE - 1] & rca.s[SIZE - 1])

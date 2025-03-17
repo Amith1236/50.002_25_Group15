@@ -23,7 +23,7 @@ module adder #(
 
         sum_result = a + b_twos_complement
         s = sum_result
-        overflow = 0
+        //overflow = 0
         /*if (a[SIZE - 1 ] == 1 && b[SIZE - 1] == 1) {  
             //negative overflow
             overflow = 1
@@ -35,7 +35,7 @@ module adder #(
         }*/
             
         
-        v = overflow
+        //v = overflow
         v = (a[SIZE-1] == b_twos_complement[SIZE-1]) && (sum_result[SIZE-1] != a[SIZE-1])
         //need to check if negative bit was overflowed?
         n = sum_result[SIZE - 1]

@@ -8,7 +8,7 @@ module alu (
     output n
 ) {
     
-    
+    //adder adder(#SIZE(32))
     
     always {
         // implement alu logic here
@@ -16,5 +16,8 @@ module alu (
         z = 0
         v = 0 
         n = 0    
+        
+        
+        
     }
 }

@@ -147,12 +147,15 @@ module alchitry_top (
                 adder.b = c{ (SIZE-$clog2(SIZE)-1)x{current_delta.q[$clog2(SIZE)]}, current_delta.q }
                 adder.subtract = 0
                 //adder.subtract = 0 ? current_delta.q[$clog2(SIZE)] == 0 : 1
-                if (~adder.n & ~adder.v){
+                if (adder.s > d9999){
+                    current_value.d = current_value.q
+                }
+                else if (~adder.n & ~adder.v){
                    current_value.d = adder.s // only add if value is non-negative and no oveflow
                 }
                 else if (~adder.v){
                    current_value.d = 0 // else, negative but no overflow, so zero out the next counter value
-                }
+                } 
 
                 // if there is overflow, do nothing
                 
@@ -211,7 +214,11 @@ module alchitry_top (
         usb_tx = usb_rx            // echo the serial data
         
         
-        
+        if(my_sig == 4){
+            my_sig = 2
+        } else{
+            my_sig = 3
+        }
         
         io_button_cond.in = io_button
         io_button_edge.in = io_button_cond.out

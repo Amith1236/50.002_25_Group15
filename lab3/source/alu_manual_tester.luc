@@ -14,9 +14,9 @@ module alu_manual_tester#(
     
     always {
         // implement alu tester logic here
-        alu.a = 0
-        alu.b = 0
-        alu.alufn = 0
+        alu.a = d1
+        alu.b = d2
+        alu.alufn = b000000
         io_led = 3x{{8h0}}
         io_segment = 0
         io_select = 4hF
