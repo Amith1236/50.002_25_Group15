@@ -12,15 +12,29 @@ module alchitry_top (
 ) {
     
     sig rst                 // reset signal
+    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
+
     
+    //seven segment display
+    const SEVEN_SEG_DIV = $is_sim() ? 3 : 16
+    bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1))
+    sig display_value[32]
     .clk(clk) {
         // The reset conditioner is used to synchronize the reset signal to the FPGA
         // clock. This ensures the entire FPGA comes out of reset at the same time.
         reset_conditioner reset_cond
+        
+        
+        // instantiate 5 edge detectors, one for each button 
+        edge_detector io_button_edge[5](#RISE(5x{{1}}), #FALL(5x{{0}}))
+        // instantiate 5 conditioners, one for each button
+        button_conditioner io_button_cond[5](#CLK_FREQ(5x{{CLK_FREQ}}))
+        .rst(rst){
+            multi_seven_seg seg(#DIV(SEVEN_SEG_DIV)) 
+        }
     }
-    const CLK_FREQ = $is_sim() ? 1000 : 10000000 // put 1000 for sim, 10000000 otherwise in hardware
     
-    alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ)) 
+    alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button_edge.out), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ)) 
     
     always {
         reset_cond.in = ~rst_n  // input raw inverted reset signal
@@ -30,11 +44,27 @@ module alchitry_top (
         
         usb_tx = usb_rx          // loop serial port
         
+        //io buttons
+        io_button_cond.in = io_button
+        io_button_edge.in = io_button_cond.out
+        
         
         // to test ALU 
         io_segment = alu_manual.io_segment
         io_select = alu_manual.io_select         
         io_led = alu_manual.io_led
+        
+        led = c{alu_manual.zvn, alu_manual.state_no}
+        
+        
+        
+        //display numbers on seven segment
+        display_value = alu_manual.seven_seg_value
+        decimal_renderer.value = display_value // convert the binary output to decimal value 
+        seg.values = decimal_renderer.digits
+        
+        io_segment = ~seg.seg
+        io_select = ~seg.sel
  
     }
 }
