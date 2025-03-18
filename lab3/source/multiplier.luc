@@ -1,61 +1,70 @@
+/*
+ * Multiplier Module
+ * This module implements a 32x32-bit multiplier using an array of full adders (FA)
+ * in a Wallace tree-like structure. The multiplier performs unsigned multiplication
+ * of two 32-bit numbers and produces a 32-bit result.
+ * 
+ * The implementation uses a combination of AND gates for partial products and
+ * full adders for adding these partial products. The structure is organized in
+ * rows, with each row handling a different bit position of the multiplier.
+ */
+
 module multiplier (
-    input a[32],
-    input b[32],
-    output mul[32]
+    input a[32],            // First 32-bit operand
+    input b[32],            // Second 32-bit operand
+    output mul[32]          // 32-bit multiplication result
 ) {
-   
-    fa fa[496]
-    sig current_row_fa_index[$clog2(496)]
-    sig previous_row_fa_index[$clog2(496)]
-    
+    fa fa[496]              // Array of full adders for partial product addition
+    sig current_row_fa_index[$clog2(496)]    // Index tracking current row's FA
+    sig previous_row_fa_index[$clog2(496)]   // Index tracking previous row's FA
     
     always {
+        // Calculate least significant bit (LSB) of result
+        mul[0] = b[0] & a[0]    // LSB is just the AND of LSBs of inputs
         
-        // LSB out
-        mul[0] = b[0] & a[0]
-        
-        // 1st row has 31 FAs (note: 0th row has *no* FAs)
-        repeat (i, 31){ // i == 0 to 30 (inclusive) -- do this for each of the 31 FAs in the 1st row
-            fa.a[i] = a[i] & b[1]
-            fa.b[i] = a[i+1] & b[0]
+        // First row of full adders (31 FAs)
+        // This row adds partial products for bit position 1
+        repeat (i, 31){ 
+            fa.a[i] = a[i] & b[1]           // Partial product from multiplier bit 1
+            fa.b[i] = a[i+1] & b[0]         // Partial product from multiplier bit 0
             if (i == 0){
-                fa.cin[i] = 0 // set the cin input of the leading FA to be 0
+                fa.cin[i] = 0               // First FA in row has no carry-in
             }
             else{ 
-                fa.cin[i] = fa.cout[i-1]; 
+                fa.cin[i] = fa.cout[i-1];   // Connect carry-out to next FA's carry-in
             }
         }
         
-        previous_row_fa_index = 0
-        current_row_fa_index = 31 
+        // Initialize indices for tracking FA positions
+        previous_row_fa_index = 0           // Start from first row
+        current_row_fa_index = 31           // First FA of second row
         
-        // bit 1 out
+        // Calculate bit 1 of result
         mul[1] = fa.s[previous_row_fa_index]
         
-        // do this for the 2nd row, 3rd row, ..., all the way to the 30th row (i.e. the 2nd last row)
-        repeat (i, 29, 2){ // i == 2 to 30 (inclusive)
-            
-            repeat (j, 32-i){ // do this for each of the (32-i) FAs in the ith row
-                fa.a[current_row_fa_index+j] = a[j] & b[i]
-                fa.b[current_row_fa_index+j] = fa.s[previous_row_fa_index+1+j]
-                if (j == 0){ // set the cin input of the leading FA of the ith row to be 0
-                    fa.cin[current_row_fa_index+j] = 0
+        // Process remaining rows (2nd to 30th)
+        repeat (i, 29, 2){ 
+            // Each row has (32-i) full adders
+            repeat (j, 32-i){ 
+                fa.a[current_row_fa_index+j] = a[j] & b[i]    // Partial product from current multiplier bit
+                fa.b[current_row_fa_index+j] = fa.s[previous_row_fa_index+1+j]  // Sum from previous row
+                if (j == 0){ 
+                    fa.cin[current_row_fa_index+j] = 0        // First FA in row has no carry-in
                 }
                 else{
-                    fa.cin[current_row_fa_index+j] = fa.cout[current_row_fa_index+j-1]
+                    fa.cin[current_row_fa_index+j] = fa.cout[current_row_fa_index+j-1]  // Connect carry chain
                 }
             } 
+            // Update indices for next row
             previous_row_fa_index = current_row_fa_index
             current_row_fa_index = current_row_fa_index + 32-i 
-            mul[i] = fa.s[previous_row_fa_index]
-            
+            mul[i] = fa.s[previous_row_fa_index]    // Store result bit
         }
         
-        // 31st row (i.e. the last row) and MSB out, this can be combined with the for-loop above,
-        // but separated for teaching purposes
-        fa.a[495] = a[0] & b[31] 
-        fa.b[495] = fa.s[494]
-        fa.cin[495] = 0
-        mul[31] = fa.s[495]
+        // Process last row (31st) and calculate most significant bit (MSB)
+        fa.a[495] = a[0] & b[31]    // Last partial product
+        fa.b[495] = fa.s[494]       // Sum from previous row
+        fa.cin[495] = 0             // No carry-in for last FA
+        mul[31] = fa.s[495]         // Store MSB of result
     }
 }

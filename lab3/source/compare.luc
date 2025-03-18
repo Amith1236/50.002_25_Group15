@@ -1,19 +1,32 @@
+/*
+ * Compare Module
+ * This module implements comparison operations for the ALU using the status flags
+ * (zero, overflow, and negative) from the adder. It supports three comparison
+ * operations:
+ * - CMPEQ (Equal): Checks if two numbers are equal
+ * - CMPLT (Less Than): Checks if first number is less than second
+ * - CMPLE (Less Than or Equal): Checks if first number is less than or equal to second
+ * 
+ * The module uses the following flags:
+ * - z (zero): Set when result is zero
+ * - v (overflow): Set when arithmetic overflow occurs
+ * - n (negative): Set when result is negative
+ */
+
 module compare (
-    input z,
-    input v,
-    input n,
-    input alufn[6],
-    output cmp
+    input z,                // Zero flag from adder
+    input v,                // Overflow flag from adder
+    input n,                // Negative flag from adder
+    input alufn[6],         // Control signal for comparison type
+    output cmp              // Comparison result (1 if condition is true)
 ) {
-    
     always {
-        
+        // Select comparison operation based on control signal bits 2:1
         case (alufn[2:1]){
-            b01: cmp = z
-            b10: cmp = n ^ v
-            b11: cmp = z | (n ^ v)
-            default: cmp = 0
+            b01: cmp = z                    // CMPEQ: Equal if result is zero
+            b10: cmp = n ^ v                // CMPLT: Less than if result is negative XOR overflow
+            b11: cmp = z | (n ^ v)          // CMPLE: Less than or equal if zero OR (negative XOR overflow)
+            default: cmp = 0                // Default case: No comparison
         }
-        
     }
 }

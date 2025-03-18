@@ -1,32 +1,48 @@
+/*
+ * Adder Module
+ * This module implements a configurable-size adder that can perform both addition and subtraction.
+ * It uses a ripple-carry adder (RCA) as the base component and handles two's complement
+ * subtraction when needed. The module also calculates important status flags:
+ * - z (zero): Set when result is zero
+ * - v (overflow): Set when arithmetic overflow occurs
+ * - n (negative): Set when result is negative
+ * 
+ * The module takes a 6-bit control signal (alufn_signal) where bit 0 determines
+ * whether to perform addition (0) or subtraction (1).
+ */
+
 module adder #(
-    SIZE ~ 32 : SIZE > 1
+    SIZE ~ 32 : SIZE > 1    // Parameter for configurable bit width, defaults to 32
 )(
-    input a[SIZE],
-    input b[SIZE],
-    input alufn_signal[6],
-    output out[SIZE],
-    output z,
-    output v,
-    output n
+    input a[SIZE],          // First input operand
+    input b[SIZE],          // Second input operand
+    input alufn_signal[6],  // Control signal (bit 0 determines add/sub)
+    output out[SIZE],       // Result of addition/subtraction
+    output z,               // Zero flag
+    output v,               // Overflow flag
+    output n                // Negative flag
 ) {
-    rca rca(#SIZE(SIZE))
-    sig xb[SIZE]
-    
+    rca rca(#SIZE(SIZE))    // Instantiate ripple-carry adder
+    sig xb[SIZE]            // Signal for potentially inverted b input
     
     always {
-        // twos complement only if subtract instruction given
+        // For subtraction, invert b and add 1 (two's complement)
+        // If alufn_signal[0] is 1, perform subtraction by inverting b
         xb[SIZE - 1:0] = b ^ SIZEx{alufn_signal[0]}
-        rca.a = a
-        rca.b = xb
-        rca.cin = alufn_signal[0]  // add 1 to complete twos complement
         
+        // Connect inputs to ripple-carry adder
+        rca.a = a           // Connect first operand
+        rca.b = xb          // Connect potentially inverted second operand
+        rca.cin = alufn_signal[0]  // Set carry-in to 1 for subtraction
         
+        // Get result from ripple-carry adder
         out = rca.s
         
-        //calculate zvn
-        z = ~| rca.s
-        v = (a[SIZE - 1] & xb[SIZE -1] & ~rca.s[SIZE -1]) | (~a[SIZE - 1] & ~xb[SIZE - 1] & rca.s[SIZE - 1])
-        n = rca.s[SIZE - 1]
-        
+        // Calculate status flags
+        z = ~| rca.s        // Zero flag: Set when all bits of result are 0
+        // Overflow flag: Set when signs of inputs match but differ from result
+        v = (a[SIZE - 1] & xb[SIZE -1] & ~rca.s[SIZE -1]) | 
+            (~a[SIZE - 1] & ~xb[SIZE - 1] & rca.s[SIZE - 1])
+        n = rca.s[SIZE - 1] // Negative flag: Set when MSB of result is 1
     }
 }

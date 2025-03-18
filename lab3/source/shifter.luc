@@ -1,51 +1,68 @@
+/*
+ * Shifter Module
+ * This module implements a configurable shifter that can perform both left and right
+ * shifts on 32-bit values. It supports three types of shifts:
+ * - Logical Left Shift (SHL)
+ * - Logical Right Shift (SHR)
+ * - Arithmetic Right Shift (SRA)
+ * 
+ * The module uses a barrel shifter architecture with multiple stages of shifting
+ * (1, 2, 4, 8, and 16 bits) to achieve any desired shift amount. The shift amount
+ * is specified by the lower 5 bits of input b.
+ */
+
 module shifter (
-    input a[32],
-    input b[5],
-    input alufn[6],
-    output shift[32],
-    output left[5][32],
-    output right[5][32]
+    input a[32],            // Input value to be shifted
+    input b[5],             // Shift amount (5 bits)
+    input alufn[6],         // Control signal for shift type
+    output shift[32],       // Final shifted result
+    output left[5][32],     // Intermediate left shift results
+    output right[5][32]     // Intermediate right shift results
 ) {
-    sig left_intermediate[5][32]
-    sig right_intermediate[5][32]
+    sig left_intermediate[5][32]    // Store intermediate left shift results
+    sig right_intermediate[5][32]   // Store intermediate right shift results
     
-    
+    // Instantiate shifters for different shift amounts (1, 2, 4, 8, 16 bits)
     x_bit_left_shifter left_shifter[5](#SHIFT({5d1, 5d2, 5d4, 5d8, 5d16}))
     x_bit_right_shifter right_shifter[5](#SHIFT({5d1, 5d2, 5d4, 5d8, 5d16}))
     
     always {
-        // implement shifter unit logic here
-        // only shift right with sign extension if alufn is 11
+        // Set padding bits based on shift type
+        // For arithmetic right shift (alufn[1]=1), pad with sign bit
         left_shifter.pad = 5x{alufn[1] & a[31]}
         right_shifter.pad = 5x{alufn[1] & a[31]}
+        
+        // Process each shift stage
         repeat (i, 5){
+            // Set input for first stage
             if (i == 0) {
-                left_shifter.a[i] = a
-                right_shifter.a[i] = a
+                left_shifter.a[i] = a      // First stage left shift input
+                right_shifter.a[i] = a     // First stage right shift input
             }
+            // Set input for subsequent stages
             else{
-                left_shifter.a[i] = left_shifter.out[i - 1]
-                right_shifter.a[i] = right_shifter.out[i - 1]
+                left_shifter.a[i] = left_shifter.out[i - 1]    // Use previous stage output
+                right_shifter.a[i] = right_shifter.out[i - 1]  // Use previous stage output
             }
-            left_shifter.shift[i] = b[4 - i]
-            right_shifter.shift[i] = b[4 - i]
             
-            // Store intermediate values
-            left_intermediate[i] = left_shifter.out[i]
-            right_intermediate[i] = right_shifter.out[i]
+            // Set shift control for this stage
+            left_shifter.shift[i] = b[4 - i]    // Control bit for left shift
+            right_shifter.shift[i] = b[4 - i]   // Control bit for right shift
+            
+            // Store intermediate results
+            left_intermediate[i] = left_shifter.out[i]     // Store left shift result
+            right_intermediate[i] = right_shifter.out[i]   // Store right shift result
         }
-
         
-        
+        // Select final output based on shift direction
         if (alufn[0] == 0){
-            shift = left_shifter.out[4]
+            shift = left_shifter.out[4]    // Left shift result
         } else {
-            shift = right_shifter.out[4]
+            shift = right_shifter.out[4]   // Right shift result
         }
+        
+        // Output intermediate results for debugging/verification
         left = left_intermediate
         right = right_intermediate
-        
     } 
-    
-    
 }

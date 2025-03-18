@@ -1,19 +1,31 @@
-// mux_4.luc
-module mux_4 (
-    input s0,  // selectors
-    input s1,
-    input in[4], // inputs 
-    output out
-  ) {
+/*
+ * 4-to-1 Multiplexer Module
+ * This module implements a 4-to-1 multiplexer that selects one of four input signals
+ * based on two selector bits (s0 and s1). The multiplexer is used in the boolean
+ * logic unit to implement various logical operations using a truth table approach.
+ * 
+ * The selector bits (s0, s1) determine which input is passed to the output:
+ * - 00: selects in[0]
+ * - 01: selects in[1]
+ * - 10: selects in[2]
+ * - 11: selects in[3]
+ */
 
-  always {
-    case (c{s1, s0}){
-      b00: out = in[0];
-      b01: out = in[1];
-      b10: out = in[2];
-      b11: out = in[3];
-      default:
-        out = 0;
+module mux_4 (
+    input s0,               // First selector bit
+    input s1,               // Second selector bit
+    input in[4],            // Array of 4 input signals
+    output out              // Selected output signal
+) {
+    always {
+        // Concatenate selector bits and use as case selector
+        case (c{s1, s0}){
+            b00: out = in[0];    // Select first input when s1=0, s0=0
+            b01: out = in[1];    // Select second input when s1=0, s0=1
+            b10: out = in[2];    // Select third input when s1=1, s0=0
+            b11: out = in[3];    // Select fourth input when s1=1, s0=1
+            default:
+                out = 0;         // Default case (should never occur with 2 selector bits)
+        }
     }
-  }
 }

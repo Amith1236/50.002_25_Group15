@@ -1,17 +1,30 @@
+/*
+ * Full Adder (FA) Module
+ * This module implements a 1-bit full adder, which is the basic building block
+ * for multi-bit addition. A full adder adds three 1-bit inputs (a, b, and cin)
+ * and produces two outputs: a sum bit (s) and a carry-out bit (cout).
+ * 
+ * The full adder implements the following logic:
+ * - Sum (s) = a XOR b XOR cin
+ * - Carry-out (cout) = (a AND b) OR (a AND cin) OR (b AND cin)
+ */
+
 // A full adder combinational logic unit 
 module fa (
-    input a,
-    input b,
-    input cin,
-    output s,
-    output cout
+    input a,                // First 1-bit input
+    input b,                // Second 1-bit input
+    input cin,              // Carry-in bit
+    output s,               // Sum output
+    output cout             // Carry-out output
 ) {
     
     always {
-        // implement 1-bit full adder logic here
+        // Calculate sum using XOR gates
+        // Sum is 1 when an odd number of inputs are 1
         s = a ^ b ^ cin
-        cout = (a & b) + (a & cin) + (b & cin)
         
+        // Calculate carry-out using AND and OR gates
+        // Carry-out is 1 when at least two inputs are 1
+        cout = (a & b) + (a & cin) + (b & cin)
     }
-    
 }

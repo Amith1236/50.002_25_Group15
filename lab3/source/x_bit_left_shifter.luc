@@ -1,3 +1,15 @@
+/*
+ * X-Bit Left Shifter Module
+ * This module implements a configurable left shifter that can shift a 32-bit value
+ * by a specified number of bits (SHIFT parameter). The module uses a 2-to-1
+ * multiplexer for each bit position to select between the original and shifted values.
+ * 
+ * The shift operation:
+ * - Shifts bits left by SHIFT positions
+ * - Fills vacated positions with the pad value
+ * - Truncates bits that shift out of the 32-bit range
+ */
+
 module x_bit_left_shifter #(
   // parameter declaration, to be set during module instantiation
   // default value given is 8
@@ -16,9 +28,11 @@ module x_bit_left_shifter #(
     sig shifted_bits[32]
   
   always {
-    // assign value to shifted_bits[32] depending on the value of SHIFT
+    // Create shifted value by:
+    // 1. Taking bits from position (31-SHIFT) down to 0
+    // 2. Filling SHIFT positions with pad value
         shifted_bits = c{a[31 - SHIFT:0], SHIFTx{pad}}
-    // connect the selector of each mux_2 with shift 
+    // Set all multiplexer selectors to the shift control signal
         mux_2_32.s = 32x{shift}
     // use a repeat-loop to: 
     // connect input[0] of each mux_2 with a[i]
@@ -26,7 +40,6 @@ module x_bit_left_shifter #(
         repeat (j, 32) {
             mux_2_32.in[j][0] = a[j]
             mux_2_32.in[j][1] = shifted_bits[j]
-
         }
         out = mux_2_32.out
          

@@ -1,92 +1,95 @@
+/*
+ * ALU (Arithmetic Logic Unit) Module
+ * This is the main ALU module that implements various arithmetic and logical operations.
+ * It takes two 32-bit inputs (a and b) and a 6-bit control signal (alufn) to determine
+ * which operation to perform. The module outputs a 32-bit result and three status flags:
+ * z (zero), v (overflow), and n (negative).
+ * 
+ * The ALU supports the following operations:
+ * - Arithmetic: ADD, SUB, MUL, DIV, INC, DEC
+ * - Logical: AND, OR, XOR, NOT, NAND, NOR
+ * - Shift: SHL (left), SHR (right), SRA (arithmetic right)
+ * - Comparison: CMPEQ, CMPLT, CMPLE
+ */
+
 module alu (
-    input a[32],
-    input b[32],
-    input alufn[6],
-    output out[32],
-    output z,
-    output v,
-    output n
+    input a[32],          // First 32-bit input operand
+    input b[32],          // Second 32-bit input operand
+    input alufn[6],       // 6-bit control signal to select operation
+    output out[32],       // 32-bit output result
+    output z,             // Zero flag
+    output v,             // Overflow flag
+    output n              // Negative flag
 ) {
     
-    adder add(#SIZE(32))
-    multiplier mul
-    boolean bool(#SIZE(32))
-    shifter shft
-    compare cmp
-    divider div
+    // Instantiate all required sub-modules
+    adder add(#SIZE(32))      // 32-bit adder for arithmetic operations
+    multiplier mul            // Multiplier for multiplication
+    boolean bool(#SIZE(32))   // Boolean logic unit for AND/OR/XOR operations
+    shifter shft             // Shifter for shift operations
+    compare cmp              // Comparator for comparison operations
+    divider div              // Divider for division operations
     
     always {       
-        //setting inputs for all modules
-        add.a = a
-        add.b = b
-        add.alufn_signal = alufn
+        // Set input connections for all sub-modules
+        add.a = a            // Connect first operand to adder
+        add.b = b            // Connect second operand to adder
+        add.alufn_signal = alufn  // Connect control signal to adder
         
-        mul.a = a
-        mul.b = b
+        mul.a = a            // Connect first operand to multiplier
+        mul.b = b            // Connect second operand to multiplier
         
-        bool.a = a
-        bool.b = b
-        bool.alufn = alufn
+        bool.a = a           // Connect first operand to boolean unit
+        bool.b = b           // Connect second operand to boolean unit
+        bool.alufn = alufn   // Connect control signal to boolean unit
         
-        shft.a = a
-        shft.b = b[4:0]
-        shft.alufn = alufn
+        shft.a = a           // Connect first operand to shifter
+        shft.b = b[4:0]      // Connect lower 5 bits of second operand as shift amount
+        shft.alufn = alufn   // Connect control signal to shifter
         
-        div.a = a
-        div.b = b
+        div.a = a            // Connect first operand to divider
+        div.b = b            // Connect second operand to divider
       
+        // Connect status flags from adder to comparator
+        cmp.z = add.z        // Connect zero flag
+        cmp.v = add.v        // Connect overflow flag
+        cmp.n = add.n        // Connect negative flag
+        cmp.alufn = alufn    // Connect control signal to comparator
         
-        // linking compare to adder
-        cmp.z = add.z
-        cmp.v = add.v
-        cmp.n = add.n
-        cmp.alufn = alufn
-        
-        
-        
-        
-        // One large mux to handle each case of alufn
-        // Done this way for ease of understanding and ease of adding functionality
-        
+        // Main operation selection using case statement
+        // Each case corresponds to a specific ALU operation
         case (alufn) {
-            6b000000:  out = add.out             // ADD
-            6b000001:  out = add.out             // SUB
-            6b000010:  out = mul.mul             // MUL
-            6b000011:  out = div.d               // DIVIDE
+            6b000000:  out = add.out             // ADD: Add two numbers
+            6b000001:  out = add.out             // SUB: Subtract b from a
+            6b000010:  out = mul.mul             // MUL: Multiply two numbers
+            6b000011:  out = div.d               // DIV: Divide a by b
             
-            6b001000:  add.b = 32b1; out = add.out            // INCREMENT
-            6b001001:  add.b = 32b1; out = add.out             // DECREMENT
+            6b001000:  add.b = 32b1; out = add.out            // INC: Increment a by 1
+            6b001001:  add.b = 32b1; out = add.out            // DEC: Decrement a by 1
             
-            6b011000:  out = bool.bool           // AND
-            6b011110:  out = bool.bool           // OR
-            6b010110:  out = bool.bool           // XOR
-            6b011010:  out = bool.bool           // A (bypass A)
+            6b011000:  out = bool.bool           // AND: Logical AND
+            6b011110:  out = bool.bool           // OR: Logical OR
+            6b010110:  out = bool.bool           // XOR: Logical XOR
+            6b011010:  out = bool.bool           // A: Pass through input a
             
-            6b010101:  out = bool.bool           // INVERT (NOT A)
-            6b010111:  out = bool.bool           // NAND (negated AND)
-            6b010001:  out = bool.bool           // NOR (negated OR)
+            6b010101:  out = bool.bool           // NOT: Logical NOT of a
+            6b010111:  out = bool.bool           // NAND: Logical NAND
+            6b010001:  out = bool.bool           // NOR: Logical NOR
             
-            6b100000:  out = shft.shift          // SHL (Logical Left Shift)
-            6b100001:  out = shft.shift          // SHR (Logical Right Shift)
-            6b100011:  out = shft.shift          // SRA (Arithmetic Right Shift)
+            6b100000:  out = shft.shift          // SHL: Shift left logical
+            6b100001:  out = shft.shift          // SHR: Shift right logical
+            6b100011:  out = shft.shift          // SRA: Shift right arithmetic
             
-            6b110011: out = cmp.cmp              // CMPEQ
-            6b110101: out = cmp.cmp              // CMPLT
-            6b110111: out = cmp.cmp              // CMPLE
+            6b110011: out = cmp.cmp              // CMPEQ: Compare for equality
+            6b110101: out = cmp.cmp              // CMPLT: Compare for less than
+            6b110111: out = cmp.cmp              // CMPLE: Compare for less than or equal
 
-            default: out = 0                  // Default case (NOP)
+            default: out = 0                     // Default case: No operation (NOP)
         }
-        /*
-        Additional functionality added:
         
-        More boolean functions added: INVERT, NAND and NOR
-        Increment and Decrement added for simplicity when updating counters e.g. timer
-        Divide function added
-        */
-        z = add.z
-        v = add.v
-        n = add.n
-        
-        
+        // Set output status flags from adder
+        z = add.z    // Zero flag: Set when result is zero
+        v = add.v    // Overflow flag: Set when arithmetic overflow occurs
+        n = add.n    // Negative flag: Set when result is negative
     }
 }

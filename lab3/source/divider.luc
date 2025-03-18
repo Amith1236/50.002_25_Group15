@@ -1,15 +1,25 @@
+/*
+ * Divider Module
+ * This module implements a 32-bit divider that performs division of two numbers.
+ * It handles the special case of division by zero by returning 0.
+ * 
+ * Note: This is a simple implementation that uses the built-in division operator.
+ * In a real hardware implementation, division would typically be implemented using
+ * a more complex algorithm like restoring or non-restoring division.
+ */
+
 // divide a by b
 module divider (
-    input a[32], // dividend
-    input b[32], // divisor
-    output d[32] // a/b
-  ) {
-
-  always {
+    input a[32],            // Dividend (32-bit input)
+    input b[32],            // Divisor (32-bit input)
+    output d[32]            // Quotient (a/b)
+) {
+    always {
+        // Check for division by zero
         if (b != 0){
-            d = a/b;
+            d = a/b;        // Perform division if divisor is non-zero
         } else {
-            d = 0
+            d = 0           // Return 0 if attempting to divide by zero
         }
-  }
+    }
 }

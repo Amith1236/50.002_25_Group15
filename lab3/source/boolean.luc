@@ -1,26 +1,34 @@
+/*
+ * Boolean Logic Module
+ * This module implements various boolean operations using a 4-to-1 multiplexer (mux_4)
+ * for each bit position. The module supports multiple logical operations including
+ * AND, OR, XOR, NOT, NAND, and NOR based on the control signal alufn.
+ * 
+ * The implementation uses a truth table approach where each 4-to-1 mux selects
+ * the appropriate output based on the input values a and b. The control signal
+ * alufn[3:0] determines which operation to perform by setting up the truth table
+ * for each bit position.
+ */
+
 module boolean #(
-    SIZE = 32 : SIZE > 0
+    SIZE = 32 : SIZE > 0    // Parameter for configurable bit width, defaults to 32
 )(
-    input a[SIZE],
-    input b[SIZE],
-    input alufn[6],
-    output bool[SIZE]
+    input a[SIZE],          // First input operand
+    input b[SIZE],          // Second input operand
+    input alufn[6],         // Control signal for operation selection
+    output bool[SIZE]       // Result of boolean operation
 ) {
-    mux_4 mux_4_32[32];
+    mux_4 mux_4_32[32];     // Array of 4-to-1 multiplexers, one for each bit
     
     always {
-        // implement boolean unit logic here
-        // create 32 copies of ALUFN signal as input to each mux_4 unit 
-        // the double curly brackets are intentional because
-        // we are creating 2D array: 32 by 4 bits
+        // Set up truth table for each bit position using the control signal
+        // Create 32 copies of the 4-bit control signal (alufn[3:0])
+        // The double curly braces create a 2D array: 32 rows by 4 bits
         mux_4_32.in = 32x{{alufn[3:0]}};
         
-        // using a and b as selectors for the truth table
-        mux_4_32.s0 = a
-        mux_4_32.s1 = b
-        bool = mux_4_32.out
-        
-        
+        // Use input bits as selectors for the truth table
+        mux_4_32.s0 = a     // First selector is first input
+        mux_4_32.s1 = b     // Second selector is second input
+        bool = mux_4_32.out // Output is the selected value from truth table
     }
-    
 }

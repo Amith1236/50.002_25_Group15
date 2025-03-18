@@ -1,16 +1,29 @@
-// This module reverses given input bit
-// MSB becomes LSB and vice versa for the rest of the bits
-// For example, 11110000 becomes 00001111
+/*
+ * Bit Reverse Module
+ * This module reverses the order of bits in a given input value. It takes a SIZE-bit
+ * input and produces a SIZE-bit output where the bits are in reverse order.
+ * 
+ * For example:
+ * - Input:  11110000
+ * - Output: 00001111
+ * 
+ * The module is parameterized to work with any positive bit width (SIZE > 0).
+ * It is useful for operations that require bit order manipulation, such as
+ * certain types of data transformations or when working with different endianness.
+ */
+
 module bit_reverse #(
-    SIZE = 32  : SIZE > 0
-)
-(
-    input in[SIZE],
-    output reversed[SIZE]
+    SIZE = 32  : SIZE > 0    // Parameter for configurable bit width, defaults to 32
+)(
+    input in[SIZE],          // Input value to be reversed
+    output reversed[SIZE]     // Reversed bit order output
 ) 
 {
     always {
+        // Iterate through each bit position
         repeat(i, SIZE){
+            // Copy bit from position (SIZE-1-i) to position i
+            // This effectively reverses the order of bits
             reversed[i] = in[SIZE-1-i]
         }
     }

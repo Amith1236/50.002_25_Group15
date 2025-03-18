@@ -1,29 +1,51 @@
+/*
+ * Multi-Seven Segment Display Module
+ * This module implements a multiplexed display driver for multiple 7-segment displays.
+ * It uses time-division multiplexing to display different values on each digit by
+ * rapidly switching between them. This creates the illusion that all digits are
+ * displayed simultaneously.
+ * 
+ * The module:
+ * - Takes an array of 4-bit values (one for each digit)
+ * - Uses a counter to cycle through the digits
+ * - Decodes the current value to 7-segment pattern
+ * - Provides digit selection signals for multiplexing
+ * 
+ * Parameters:
+ * - DIGITS: Number of 7-segment displays (default: 4)
+ * - DIV: Clock divider for multiplexing rate (default: 16)
+ */
+
 module multi_seven_seg #(
-    DIGITS = 4 : DIGITS > 0,
-    DIV = 16 : DIV >= 0
+    DIGITS = 4 : DIGITS > 0,    // Number of 7-segment displays
+    DIV = 16 : DIV >= 0         // Clock divider for multiplexing rate
 )(
-    input clk,                // clock
-    input rst,                // reset
-    input values[DIGITS][4],  // values to show
-    output seg[7],            // LED segments
-    output sel[DIGITS]        // Digit select
+    input clk,                   // System clock
+    input rst,                   // Reset signal
+    input values[DIGITS][4],     // Array of 4-bit values to display
+    output seg[7],               // 7-segment display pattern
+    output sel[DIGITS]           // Digit selection signals
 ) {
     
-    // number of bits required to store DIGITS-1
+    // Calculate number of bits needed to represent digit index
     const DIGIT_BITS = $clog2(DIGITS)
     
+    // Clocked block for counter
     .clk(clk), .rst(rst) {
+        // Counter to cycle through digits
         counter ctr (#DIV(DIV), #SIZE(DIGIT_BITS), #TOP(DIGITS-1)) 
     }
     
-    seven_seg seg_dec                        // segment decoder
-    decoder digit_dec (#WIDTH(DIGIT_BITS)) // digit decoder
+    seven_seg seg_dec                        // 7-segment decoder for current digit
+    decoder digit_dec (#WIDTH(DIGIT_BITS))   // Binary to one-hot decoder for digit selection
     
     always {
-        seg_dec.char = values[ctr.value]    // select the value for the active digit
-        seg = seg_dec.segs                  // output the decoded value
+        // Select current digit's value and decode to 7-segment pattern
+        seg_dec.char = values[ctr.value]     // Get value for current digit
+        seg = seg_dec.segs                   // Output decoded pattern
         
-        digit_dec.in = ctr.value           // decode active digit to one-hot
-        sel = digit_dec.out                // output the active digit
+        // Generate digit selection signals
+        digit_dec.in = ctr.value            // Convert counter value to one-hot
+        sel = digit_dec.out                 // Output digit selection signals
     }
 }

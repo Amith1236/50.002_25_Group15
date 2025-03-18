@@ -1,37 +1,49 @@
+/*
+ * X-Bit Right Shifter Module
+ * This module implements a configurable right shifter that can shift a 32-bit value
+ * by a specified number of bits (SHIFT parameter). The module uses a 2-to-1
+ * multiplexer for each bit position to select between the original and shifted values.
+ * 
+ * The shift operation:
+ * - Shifts bits right by SHIFT positions
+ * - Fills vacated positions with the pad value
+ * - Truncates bits that shift out of the 32-bit range
+ * 
+ * This module is used in the main shifter for both logical and arithmetic right shifts,
+ * with the pad value determining whether it's a logical (0) or arithmetic (sign-extended) shift.
+ */
+
 module x_bit_right_shifter #(
-  // Parameter declaration, to be set during module instantiation
-  // Default value is 8
+  // Parameter for shift amount, must be between 0 and 31
   SHIFT = 8 : SHIFT > -1 & SHIFT < 32
 )(
-  input a[32],     // 32-bit input
-  input shift,     // Shift enable signal (1 = shift, 0 = pass-through)
-  input pad,       // Padding bit for empty positions
-  output out[32]   // 32-bit output
+  input a[32],     // Input value to be shifted
+  input shift,     // Control signal to enable/disable shift
+  input pad,       // Value to fill vacated positions
+  output out[32]   // Shifted result
 ) {
-  // Module declarations
-  // Instantiate 32 mux_2 units for bitwise selection
+  // Array of 2-to-1 multiplexers, one for each bit position
   mux_2 mux_2_32[32];
 
-  // Intermediate signal for shifted bits
+  // Intermediate signal to store the shifted value
   sig shifted_bits[32];
 
   always {
-    // Initialize shifted_bits to 0
-    // Assign shifted values, ensuring out-of-bounds indices use `pad`
-        shifted_bits = c{SHIFTx{pad}, a[31:SHIFT]}
+    // Create shifted value by:
+    // 1. Filling SHIFT positions with pad value
+    // 2. Taking bits from position 31 down to SHIFT
+    shifted_bits = c{SHIFTx{pad}, a[31:SHIFT]}
 
-    // Connect the selector of each mux_2 with shift
+    // Set all multiplexer selectors to the shift control signal
     mux_2_32.s = 32x{shift}
 
-    // Use a repeat-loop to:
-    // - Connect input[0] of each mux_2 with a[i] (no shift)
-    // - Connect input[1] of each mux_2 with shifted_bits[i] (shifted version)
+    // Connect inputs to each multiplexer
     repeat (j, 32) {
-      mux_2_32.in[j][0] = a[j];         // No shift case
-      mux_2_32.in[j][1] = shifted_bits[j]; // Shifted output
+      mux_2_32.in[j][0] = a[j];           // Original bit value (no shift)
+      mux_2_32.in[j][1] = shifted_bits[j]; // Shifted bit value
     }
     
-    // Assign output from multiplexer
+    // Get final output from multiplexers
     out = mux_2_32.out;
   }
 }

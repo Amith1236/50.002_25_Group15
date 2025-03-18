@@ -1,31 +1,40 @@
-// A ripple-carry-adder combinational logic unit
-// rca.luc
+/*
+ * Ripple-Carry Adder (RCA) Module
+ * This module implements a configurable-size ripple-carry adder using an array of
+ * full adders (FA). The ripple-carry adder is a basic combinational logic unit
+ * that adds two multi-bit numbers together, propagating the carry from one bit
+ * position to the next.
+ * 
+ * The module takes two SIZE-bit inputs (a and b) and a carry-in bit (cin),
+ * and produces a SIZE-bit sum output (s).
+ */
+
 module rca #(
-    SIZE ~ 32 : SIZE > 1
+    SIZE ~ 32 : SIZE > 1    // Parameter for configurable bit width, defaults to 32
 )(
-    input a[SIZE],
-    input b[SIZE],
-    input cin[SIZE],
-    output s[SIZE]
-  ) {
+    input a[SIZE],          // First input operand
+    input b[SIZE],          // Second input operand
+    input cin[SIZE],        // Carry-in bit
+    output s[SIZE]          // Sum output
+) {
+    fa fa[SIZE];            // Array of full adders, one for each bit position
 
-  fa fa[SIZE];
-
-  always {
-
-    fa.a = a
-    fa.b = b
-    fa.cin = 0;
-    
-    repeat(i, SIZE){
-        if (i == 0){
-            fa.cin[0] = cin
+    always {
+        // Connect inputs to all full adders
+        fa.a = a            // Connect first operand bits
+        fa.b = b            // Connect second operand bits
+        fa.cin = 0;         // Initialize all carry-ins to 0
+        
+        // Set up carry chain between full adders
+        repeat(i, SIZE){
+            if (i == 0){
+                fa.cin[0] = cin    // First full adder gets external carry-in
+            }
+            else{
+                fa.cin[i] = fa.cout[i-1]  // Each subsequent full adder gets carry from previous
+            }
         }
-        else{
-            fa.cin[i] = fa.cout[i-1]
-        }
-    }
       
-    s = fa.s // connect the output bits
-  }
+        s = fa.s            // Connect sum outputs to final result
+    }
 }
