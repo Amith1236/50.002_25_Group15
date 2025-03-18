@@ -10,6 +10,6 @@ module divider (
             d = a/b;
         } else {
             d = 0
-        }
+        } 
   }
 }
