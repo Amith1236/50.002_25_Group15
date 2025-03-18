@@ -22,7 +22,7 @@ module adder #(
         
         out = rca.s
         z = ~| rca.s
-        v = (a[SIZE - 1] & xb[SIZE -1] & ~rca.s[SIZE -1]) | (~a[SIZE - 1] & ~b[SIZE - 1] & rca.s[SIZE - 1])
+        v = (a[SIZE - 1] & xb[SIZE -1] & ~rca.s[SIZE -1]) | (~a[SIZE - 1] & ~xb[SIZE - 1] & rca.s[SIZE - 1])
         n = rca.s[SIZE - 1]
         
     }

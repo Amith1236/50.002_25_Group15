@@ -17,19 +17,11 @@ module x_bit_right_shifter #(
 
   always {
     // Initialize shifted_bits to 0
-    shifted_bits = 0;
-
     // Assign shifted values, ensuring out-of-bounds indices use `pad`
-    repeat (i, 32) {
-      if (i >= SHIFT) {
-        shifted_bits[i - SHIFT] = a[i];  // Shift right by `SHIFT`
-      } else {
-        shifted_bits[i] = pad;  // Fill empty spaces with pad
-      }
-    }
+        shifted_bits = c{SHIFTx{pad}, a[31:SHIFT]}
 
     // Connect the selector of each mux_2 with shift
-    mux_2_32.s = shift;
+    mux_2_32.s = 32x{shift}
 
     // Use a repeat-loop to:
     // - Connect input[0] of each mux_2 with a[i] (no shift)

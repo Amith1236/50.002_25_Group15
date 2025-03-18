@@ -214,11 +214,6 @@ module alchitry_top (
         usb_tx = usb_rx            // echo the serial data
         
         
-        if(my_sig == 4){
-            my_sig = 2
-        } else{
-            my_sig = 3
-        }
         
         io_button_cond.in = io_button
         io_button_edge.in = io_button_cond.out

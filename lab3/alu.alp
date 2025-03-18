@@ -100,19 +100,43 @@
                     "type": "DiskFile",
                     "path": "source/x_bit_right_shifter.luc"
                 }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/bin_to_dec.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/counter.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Miscellaneous/decoder.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "Component",
+                    "path": "Pulses/edge_detector.luc"
+                }
             }
         ],
         "constraintFiles": [
             {
                 "file": {
                     "type": "Component",
-                    "path": "Constraints/io_v1.acf"
+                    "path": "Constraints/alchitry.acf"
                 }
             },
             {
                 "file": {
                     "type": "Component",
-                    "path": "Constraints/alchitry.acf"
+                    "path": "Constraints/io_v1_pulldown.acf"
                 }
             }
         ],

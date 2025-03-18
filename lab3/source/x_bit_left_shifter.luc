@@ -17,22 +17,16 @@ module x_bit_left_shifter #(
   
   always {
     // assign value to shifted_bits[32] depending on the value of SHIFT
-        shifted_bits = 0
-        repeat (i, 32) {
-          if (i < (32 - SHIFT)) {
-            shifted_bits[i + SHIFT] = a[i];  // Shift left by `SHIFT`
-          } else {
-            shifted_bits[i] = pad;  // Fill with padding bit
-          }
-        }
+        shifted_bits = c{a[31 - SHIFT:0], SHIFTx{pad}}
     // connect the selector of each mux_2 with shift 
-        mux_2_32.s = shift
+        mux_2_32.s = 32x{shift}
     // use a repeat-loop to: 
     // connect input[0] of each mux_2 with a[i]
     // connect input[1] of each mux_2 with the shifted_bits[i]
         repeat (j, 32) {
             mux_2_32.in[j][0] = a[j]
             mux_2_32.in[j][1] = shifted_bits[j]
+
         }
         out = mux_2_32.out
          
