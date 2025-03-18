@@ -148,6 +148,18 @@
                     "type": "Component",
                     "path": "Conditioning/button_conditioner.luc"
                 }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/rom.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/aluautotester.luc"
+                }
             }
         ],
         "constraintFiles": [
