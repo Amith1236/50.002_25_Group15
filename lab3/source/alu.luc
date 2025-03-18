@@ -68,6 +68,10 @@ module alu (
             6b010110:  out = bool.bool           // XOR
             6b011010:  out = bool.bool           // A (bypass A)
             
+            6b011100:  out = bool.bool          // INVERT (NOT A)
+            6b010111:  out = bool.bool            // NAND (negated AND)
+            6b010001:  out = bool.bool        // NOR (negated OR)
+            
             6b100000:  out = shft.shift          // SHL (Logical Left Shift)
             6b100001:  out = shft.shift          // SHR (Logical Right Shift)
             6b100011:  out = shft.shift          // SRA (Arithmetic Right Shift)
