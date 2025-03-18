@@ -19,7 +19,7 @@ module divider (
         if (b != 0){
             d = a/b;        // Perform division if divisor is non-zero
         } else {
-            d = 0           // Return 0 if attempting to divide by zero
-        }
-    }
+            d = 0
+        } 
+  }
 }

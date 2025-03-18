@@ -1,0 +1,80 @@
+module rom (
+    input address[32],
+    output ele_a[32],
+    output ele_b[32],
+    output ele_alufn[6],
+    output ex_ans[32]
+) {
+    sig a[32]
+    sig b[32]
+    sig alufn[6]
+    sig ans[32]
+    
+    always {
+        case(address) {
+            // ADD Tests (0x00)
+            1:  a = 5; b = 3; alufn = 6b000000; ans = 8;    // Basic addition
+            2:  a = 0; b = 7; alufn = 6b000000; ans = 7;   // Zero addition
+            3:  a = 2147483647; b = 1; alufn = 6b000000; ans = 2147483648; // Overflow test
+            
+            // SUB Tests (0x01)
+            4:  a = 5; b = 3; alufn = 6b000001; ans = 2;  // Basic subtraction
+            5:  a = 0; b = 5; alufn = 6b000001; ans = -32b101;  // Negative result
+            
+            // MUL Tests (0x02)
+            6:  a = 6; b = 4; alufn = 6b000010; ans = 24;  // Basic multiplication
+            7:  a = 10; b = 0; alufn = 6b000010; ans = 0;  // Multiplication by zero
+            
+            // DIV Tests (0x03)
+            8:  a = 8; b = 2; alufn = 6b000011; ans = 4;  // Basic division
+            9:  a = 7; b = 3; alufn = 6b000011; ans = 2;  // Integer division (floor)
+            
+            // AND (0x18)
+            10: a = 32b1010; b = 32b1100; alufn = 6b011000; ans = 32b1000; 
+            
+            // OR (0x1E)
+            11: a = 32b1010; b = 32b1100; alufn = 6b011110; ans = 32b1110; 
+            
+            // XOR (0x16)
+            12: a = 32b1010; b = 32b1100; alufn = 6b010110; ans = 32b0110; 
+            
+            // INVERT (0x1C)
+            13: a = 32b1010; b = 0; alufn = 6b011100; ans = ~32b1010; 
+            
+            // NAND (0x17)
+            14: a = 32b1010; b = 32b1100; alufn = 6b010111; ans = ~(32b1010 & 32b1100); 
+            
+            // NOR (0x09)
+            15: a = 32b1010; b = 32b1100; alufn = 6b010001; ans = ~(32b1010 | 32b1100); 
+            
+            // SHL (0x20)
+            16: a = 32b0001; b = 2; alufn = 6b100000; ans = 32b0100; 
+            
+            // SHR (0x21)
+            17: a = 32b1000; b = 2; alufn = 6b100001; ans = 32b0010;
+            
+            // SRA (0x23)
+            18: a = 32b10000000; b = 2; alufn = 6b100011; ans = 32b11100000; // Arithmetic shift keeps sign bit
+            
+            // CMPEQ (0x33)
+            19: a = 7; b = 7; alufn = 6b110011; ans = 1;   // Should be true
+            20: a = 5; b = 7; alufn = 6b110011; ans = 0;   // Should be false
+            
+            // CMPLT (0x35)
+            21: a = 5; b = 7; alufn = 6b110101; ans = 1;   // Less than test
+            22: a = 8; b = 6; alufn = 6b110101; ans = 0;   // Greater than test
+            
+            // CMPLE (0x37)
+            23: a = 5; b = 5; alufn = 6b110111; ans = 1;   // Less than or equal test
+            24: a = 9; b = 5; alufn = 6b110111; ans = 0;   // Greater than test
+            
+            // Default (NOP)
+            default: a = 0; b = 0; alufn = 0; ans = 0;
+        }
+        
+        ele_a = a;
+        ele_b = b;
+        ele_alufn = alufn;
+        ex_ans = ans;
+    }
+}

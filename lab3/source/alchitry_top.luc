@@ -20,11 +20,11 @@ module alchitry_top (
     bin_to_dec decimal_renderer(#DIGITS(4), #LEADING_ZEROS(1))
     sig display_value[32]
     
+
     .clk(clk) {
         // The reset conditioner is used to synchronize the reset signal to the FPGA
         // clock. This ensures the entire FPGA comes out of reset at the same time.
         reset_conditioner reset_cond
-        
         
         // instantiate 5 edge detectors, one for each button 
         edge_detector io_button_edge[5](#RISE(5x{{1}}), #FALL(5x{{0}}))
@@ -36,8 +36,11 @@ module alchitry_top (
         }
     }
     
+
     // setting parameters for manula tester
-    alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button_edge.out), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ)) 
+    alu_manual_tester alu_manual(.clk(clk), .rst(rst), .io_button(io_button_edge.out), .io_dip(io_dip), #CLK_FREQ(CLK_FREQ))
+    alu_auto_tester alu_auto(.clk(clk), .rst(rst), .io_button(io_button_edge.out), .io_dip_bin(io_dip[0][7:0]), #CLK_FREQ(CLK_FREQ))
+
     
     always {
         reset_cond.in = ~rst_n  // input raw inverted reset signal
@@ -52,7 +55,7 @@ module alchitry_top (
         io_button_edge.in = io_button_cond.out
         
         
-        // to test ALU 
+        // to test ALU using manual
         io_segment = alu_manual.io_segment
         io_select = alu_manual.io_select         
         io_led = alu_manual.io_led
@@ -70,6 +73,8 @@ module alchitry_top (
         
         io_segment = ~seg.seg
         io_select = ~seg.sel
+        
+        //to test ALU using auto
  
     }
 }

@@ -1,0 +1,180 @@
+module alu_auto_tester#(
+    CLK_FREQ ~ 1000 : CLK_FREQ > 0) 
+(
+    input clk,  // clock
+    input rst,  // reset
+    input io_button[5],
+    input io_dip_bin[8],
+    output io_led[3][8],
+    output io_segment[8],
+    output io_select[4],
+    output seven_seg_display[32],
+    output zvn[3],
+    output error
+) {
+    
+    const SIZE = 32
+    const SLOW_CLOCK_DEFAULT_SPEED = $is_sim() ? 8 : 28
+    const CLK_FREQ = $is_sim() ? 1000 : 100000000 // put 1000 only for sim, 100M on hardware
+    
+    sig address[32]
+    sig ex_ans_rom[32]
+    sig prcs_alu_ans[32]
+    
+    sig slow_clock
+    sig a_b_out[2]
+    
+    enum Main_auto {
+    	IDLE,
+    	AUTO_CYCLE,
+	    ADDRESS,
+     READ_AND_SHOW,
+     DISPLAY_A,
+     DISPLAY_B,
+     DISPLAY_OUT,
+     STOP,
+     RESET
+    }
+    
+    rom rom
+    alu alu
+    
+    .clk(clk){
+        edge_detector slow_clock_edge(#RISE(1), #FALL(0))
+        .rst(rst){
+            dff counter[SIZE]
+            dff speed_pointer[$clog2(SIZE)](#INIT(SLOW_CLOCK_DEFAULT_SPEED))
+            dff slow_clock_enable(#INIT(0))
+            
+            dff main_auto_states[$width(Main_auto)](#INIT(Main_auto.IDLE))
+            
+            dff auto_cycling_counter[32](#INIT(0))
+            
+            dff a_rom[32](#INIT(0))
+            dff b_rom[32](#INIT(0))
+            dff alufn_rom[6](#INIT(0))
+            dff error_str[1](#INIT(0))
+        }
+    }
+    
+    
+    always {
+        speed_pointer.d = speed_pointer.q
+        slow_clock_enable.d = slow_clock_enable.q
+        
+        main_auto_states.d = main_auto_states.q
+        auto_cycling_counter.d = auto_cycling_counter.q
+        
+        a_rom.d = a_rom.q
+        b_rom.d = b_rom.q
+        alufn_rom.d = alufn_rom.q
+        error_str.d = error_str.q
+        
+        // -------- clock
+        counter.d = counter.q + 1
+        slow_clock = counter.q[speed_pointer.q] 
+        
+        case (slow_clock_enable.q) {
+            0:
+                slow_clock_edge.in = 0
+            1:
+                slow_clock_edge.in = slow_clock
+            default:
+                slow_clock_edge.in = 0
+        }
+        
+        address = 0
+        ex_ans_rom = 0
+        prcs_alu_ans = 0
+        a_b_out = 0
+        
+        rom.address = address
+        alu.a = a_rom.q
+        alu.b = b_rom.q
+        alu.alufn = alufn_rom.q
+        
+        io_led = 3x{{8h0}}
+        io_segment = 0
+        io_select = 4hF
+        
+        // seven_seg display output to be concatenated by Amith
+        // concat of error, a_b_out, test_case_no = address_no
+        seven_seg_display = address 
+        error = error_str.q
+        
+        // displayed by led, handled in alchitry_top
+        zvn = c{alu.z, alu.v, alu.n} 
+        
+        
+        case(main_auto_states.q) {
+            Main_auto.IDLE:
+                if (slow_clock_edge.out) {
+                    main_auto_states.d = Main_auto.ADDRESS
+                } 
+                else if(io_button[1]) {
+                    if (~|slow_clock_enable.q) { // if slow_clock is not currently enabled, run
+                        main_auto_states.d = Main_auto.AUTO_CYCLE
+                    } 
+                    else {
+                        main_auto_states.d = Main_auto.STOP
+                    }
+                }
+                else if (io_button[2]) {
+                main_auto_states.d = Main_auto.RESET
+                 }
+            
+            Main_auto.AUTO_CYCLE:
+                slow_clock_enable.d = 1
+                main_auto_states.d = Main_auto.IDLE       
+            
+            Main_auto.ADDRESS:
+                address = auto_cycling_counter.q + 1
+                auto_cycling_counter.d = address
+                
+                main_auto_states.d = Main_auto.READ_AND_SHOW
+                
+            Main_auto.READ_AND_SHOW:
+                a_rom.d = rom.ele_a
+                b_rom.d = rom.ele_b
+                alufn_rom.d = rom.ele_alufn
+                ex_ans_rom = rom.ex_ans
+               
+                prcs_alu_ans = alu.out ^ c{(SIZE-8)x{b0},io_dip_bin}
+                
+                error_str.d = | (prcs_alu_ans ^ ex_ans_rom)
+                
+                main_auto_states.d = Main_auto.DISPLAY_A
+            
+            Main_auto.DISPLAY_A:
+                io_led[1][7:0] = a_rom.q[31:24]
+                io_led[0][7:0] = a_rom.q[7:0]
+                a_b_out = 1
+                
+                main_auto_states.d = Main_auto.DISPLAY_B
+            
+            Main_auto.DISPLAY_B:
+                io_led[1][7:0] = b_rom.q[31:24]
+                io_led[0][7:0] = b_rom.q[7:0]
+                a_b_out = 2
+                
+                main_auto_states.d = Main_auto.DISPLAY_OUT
+            
+            Main_auto.DISPLAY_OUT:
+                io_led[1][7:0] = alu.out[31:24]
+                io_led[0][7:0] = alu.out[7:0]
+                a_b_out = 3
+                
+                main_auto_states.d = Main_auto.IDLE
+            
+            Main_auto.STOP:
+                slow_clock_enable.d = 0
+                main_auto_states.d = Main_auto.IDLE
+            
+            Main_auto.RESET:
+                slow_clock_enable.d = 0
+                auto_cycling_counter.d = 0
+                main_auto_states.d = Main_auto.IDLE
+        }
+        
+    }
+}
