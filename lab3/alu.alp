@@ -148,6 +148,12 @@
                     "type": "Component",
                     "path": "Conditioning/button_conditioner.luc"
                 }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/divider.luc"
+                }
             }
         ],
         "constraintFiles": [

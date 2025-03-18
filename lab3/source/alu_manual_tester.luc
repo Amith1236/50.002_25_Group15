@@ -17,6 +17,8 @@ module alu_manual_tester#(
     sig b[SIZE]
     sig alufn[6]
     
+    // States to listen for user input and store a and b values
+    // Store 16 bits at a time to fill up 32 bits due to input limitation
     enum States {
         IDLE,
         A_1_HALF,
@@ -49,7 +51,7 @@ module alu_manual_tester#(
         states.d = states.q
         a_1_half.d = a_1_half.q
         a_2_half.d = a_2_half.q
-        b_1_half.d = b_2_half.q
+        b_1_half.d = b_1_half.q
         b_2_half.d = b_2_half.q
         
         alu.a = a
