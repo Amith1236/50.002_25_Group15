@@ -56,18 +56,25 @@ module alchitry_top (
         
         
         // to test ALU using manual
-        io_segment = alu_manual.io_segment
-        io_select = alu_manual.io_select         
-        io_led = alu_manual.io_led
-        
-        led = c{alu_manual.zvn, alu_manual.state_no}
+        if (io_dip[2][7] == 0){
+            io_segment = alu_manual.io_segment
+            io_select = alu_manual.io_select         
+            io_led = alu_manual.io_led
+            display_value = alu_manual.seven_seg_value
+            led = c{alu_manual.zvn, alu_manual.state_no}
+        } else {
+            io_segment = alu_auto.io_segment
+            io_select = alu_auto.io_select
+            io_led = alu_auto.io_led
+            display_value = alu_auto.seven_seg_display
+            led = c{alu_auto.running, alu_auto.zvn, alu_auto.state_no}
+        }
         
         
         
         // display result on seven segment
         // only displays the first 14 bits
         
-        display_value = alu_manual.seven_seg_value
         decimal_renderer.value = display_value // convert the binary output to decimal value 
         seg.values = decimal_renderer.digits
         

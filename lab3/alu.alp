@@ -158,13 +158,13 @@
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/aluautotester.luc"
+                    "path": "source/divider.luc"
                 }
             },
             {
                 "file": {
                     "type": "DiskFile",
-                    "path": "source/divider.luc"
+                    "path": "source/alu_auto_tester.luc"
                 }
             }
         ],
