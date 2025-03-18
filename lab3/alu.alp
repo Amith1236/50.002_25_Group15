@@ -152,6 +152,9 @@
             {
                 "file": {
                     "type": "DiskFile",
+
+                    "path": "source/divider.luc"
+
                     "path": "source/rom.luc"
                 }
             },

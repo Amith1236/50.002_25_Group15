@@ -13,12 +13,9 @@ module alu (
     boolean bool(#SIZE(32))
     shifter shft
     compare cmp
+    divider div
     
-    
-    always {
-        // implement alu logic here
-          
-        
+    always {       
         //setting inputs for all modules
         add.a = a
         add.b = b
@@ -35,42 +32,39 @@ module alu (
         shft.b = b[4:0]
         shft.alufn = alufn
         
+        div.a = a
+        div.b = b
+      
+        
         // linking compare to adder
         cmp.z = add.z
         cmp.v = add.v
         cmp.n = add.n
         cmp.alufn = alufn
-        /*
         
-        add 000000
-        sub 000001
-        mul 000010
-        and 011000
-        or  011110
-        xor 010110
-        a ldr 011010
-        shl 100000
-        shr 100001
-        sra 100011
-        cmpeq 110011
-        cmplt 110101
-        cmple 110111
         
-        */
+        
+        
+        // One large mux to handle each case of alufn
+        // Done this way for ease of understanding and ease of adding functionality
         
         case (alufn) {
             6b000000:  out = add.out             // ADD
             6b000001:  out = add.out             // SUB
             6b000010:  out = mul.mul             // MUL
+            6b000011:  out = div.d               // DIVIDE
+            
+            6b001000:  add.b = 32b1; out = add.out            // INCREMENT
+            6b001001:  add.b = 32b1; out = add.out             // DECREMENT
             
             6b011000:  out = bool.bool           // AND
             6b011110:  out = bool.bool           // OR
             6b010110:  out = bool.bool           // XOR
             6b011010:  out = bool.bool           // A (bypass A)
             
-            6b011100:  out = bool.bool          // INVERT (NOT A)
-            6b010111:  out = bool.bool            // NAND (negated AND)
-            6b010001:  out = bool.bool        // NOR (negated OR)
+            6b010101:  out = bool.bool           // INVERT (NOT A)
+            6b010111:  out = bool.bool           // NAND (negated AND)
+            6b010001:  out = bool.bool           // NOR (negated OR)
             
             6b100000:  out = shft.shift          // SHL (Logical Left Shift)
             6b100001:  out = shft.shift          // SHR (Logical Right Shift)
@@ -82,10 +76,17 @@ module alu (
 
             default: out = 0                  // Default case (NOP)
         }
+        /*
+        Additional functionality added:
         
+        More boolean functions added: INVERT, NAND and NOR
+        Increment and Decrement added for simplicity when updating counters e.g. timer
+        Divide function added
+        */
         z = add.z
         v = add.v
         n = add.n
+        
         
     }
 }
