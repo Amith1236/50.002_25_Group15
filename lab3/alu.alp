@@ -152,9 +152,6 @@
             {
                 "file": {
                     "type": "DiskFile",
-
-                    "path": "source/divider.luc"
-
                     "path": "source/rom.luc"
                 }
             },
@@ -162,6 +159,12 @@
                 "file": {
                     "type": "DiskFile",
                     "path": "source/aluautotester.luc"
+                }
+            },
+            {
+                "file": {
+                    "type": "DiskFile",
+                    "path": "source/divider.luc"
                 }
             }
         ],
