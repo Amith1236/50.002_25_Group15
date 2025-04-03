@@ -1,0 +1,51 @@
+module shifter (
+    input a[32],
+    input b[5],
+    input alufn[6],
+    output shift[32],
+    output left[5][32],
+    output right[5][32]
+) {
+    sig left_intermediate[5][32]
+    sig right_intermediate[5][32]
+    
+    
+    x_bit_left_shifter left_shifter[5](#SHIFT({5d1, 5d2, 5d4, 5d8, 5d16}))
+    x_bit_right_shifter right_shifter[5](#SHIFT({5d1, 5d2, 5d4, 5d8, 5d16}))
+    
+    always {
+        // implement shifter unit logic here
+        // only shift right with sign extension if alufn is 11
+        left_shifter.pad = 5x{alufn[1] & a[31]}
+        right_shifter.pad = 5x{alufn[1] & a[31]}
+        repeat (i, 5){
+            if (i == 0) {
+                left_shifter.a[i] = a
+                right_shifter.a[i] = a
+            }
+            else{
+                left_shifter.a[i] = left_shifter.out[i - 1]
+                right_shifter.a[i] = right_shifter.out[i - 1]
+            }
+            left_shifter.shift[i] = b[4 - i]
+            right_shifter.shift[i] = b[4 - i]
+            
+            // Store intermediate values
+            left_intermediate[i] = left_shifter.out[i]
+            right_intermediate[i] = right_shifter.out[i]
+        }
+
+        
+        
+        if (alufn[0] == 0){
+            shift = left_shifter.out[4]
+        } else {
+            shift = right_shifter.out[4]
+        }
+        left = left_intermediate
+        right = right_intermediate
+        
+    } 
+    
+    
+}

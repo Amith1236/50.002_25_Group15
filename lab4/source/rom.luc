@@ -1,0 +1,104 @@
+module rom (
+    input address[32],
+    output ele_a[32],
+    output ele_b[32],
+    output ele_alufn[6],
+    output ex_ans[32]
+) {
+    sig a[32]
+    sig b[32]
+    sig alufn[6]
+    sig ans[32]
+    
+    always {
+        case(address) {
+            // ADD Tests (0x00)
+            1:  a = 5; b = 3; alufn = 6b000000; ans = 8;    // Basic addition
+            2:  a = 0; b = 7; alufn = 6b000000; ans = 7;   // Zero addition
+            3:  a = 2147483647; b = 1; alufn = 6b000000; ans = 2147483648; // Overflow test
+            
+            // SUB Tests (0x01)
+            4:  a = 5; b = 3; alufn = 6b000001; ans = 2;  // Basic subtraction
+            5:  a = 0; b = 5; alufn = 6b000001; ans = -32b101;  // Negative result
+            6:  a = 0; b = h7FFFFFFF; alufn = 6b000001; ans = h80000001; // Boundary: 0 minus MAX_POSITIVE (0x7FFFFFFF) yields negative in two’s complement
+
+            
+            // MUL Tests (0x02)
+            7:  a = 6; b = 4; alufn = 6b000010; ans = 24;  // Basic multiplication
+            8:  a = 10; b = 0; alufn = 6b000010; ans = 0;  // Multiplication by zero
+            9:  a = 8; b = 1; alufn = 6b000010; ans = 8; // Multiplication by one
+
+            
+            // DIV Tests (0x03)
+            10: a = 8; b = 2; alufn = 6b000011; ans = 4;  // Basic division
+            11: a = 7; b = 3; alufn = 6b000011; ans = 2;  // Integer division (floor)
+            12: a = 8; b = 1; alufn = 6b000011; ans = 8; // Division by one
+            13: a = 8; b = 0; alufn = 6b000011; ans = 0; // Division by 0 = 0
+ 
+            // AND (0x18)
+            14: a = h00000004; b = 0; alufn = 6b011000; ans = 0; // A AND 0 yields 0
+            15: a = h00000004; b = hFFFFFFFF; alufn = 6b011000; ans = h00000004; // AND with 0xFFFFFFFF; result should equal A
+            16: a = h00000004; b = h00000004; alufn = 6b011000; ans = h00000004; // Identity: A AND A equals A
+            17: a = 32b1; b = hFFFFFFFE; alufn = 6b011000; ans = 0; // Complement: A AND NOT A equals 0 
+            
+            // OR (0x1E)
+            19:  a = h00000004; b = 0; alufn = 6b011110; ans = h00000004; // A OR 0 yields A
+            20:  a = h00000004; b = hFFFFFFFF; alufn = 6b011110; ans = hFFFFFFFF; // A OR 0xFFFFFFFF yields 0xFFFFFFFF
+            21:  a = h00000004; b = h00000004; alufn = 6b011110; ans = h00000004; // Identity: A OR A equals A      
+            22: a = 32b1010; b = 32b1100; alufn = 6b011110; ans = 32b1110;
+      
+            // XOR (0x16)
+            23:  a = h00000004; b = 0; alufn = 6b010110; ans = h00000004; // A XOR 0 yields A
+            24:  a = h00000004; b = h00000004; alufn = 6b010110; ans = 0; // A XOR A yields 0
+            25:  a = 32b1; b = hFFFFFFFE; alufn = 6b010110; ans = hFFFFFFFF; // Complement: A XOR NOT A yields 0xFFFFFFFF
+            26: a = 32b1010; b = 32b1100; alufn = 6b010110; ans = 32b0110; 
+            
+            //A (LDR) Test (0x1A):
+            27: a = h00000005; b = 0; alufn = 6b011010; ans = h00000005; // Load: A should be output as-is
+      
+            // INVERT (0x1C)
+            28: a = 32b1010; b = 0; alufn = 6b011100; ans = ~32b1010; 
+            
+            // NAND (0x17)
+            29: a = 32b1010; b = 32b1100; alufn = 6b010111; ans = ~(32b1010 & 32b1100); 
+            
+            // NOR (0x09)
+            30: a = 32b1010; b = 32b1100; alufn = 6b010001; ans = ~(32b1010 | 32b1100);
+            
+            // SHL (0x20)
+            31: a = 32b0001; b = 2; alufn = 6b100000; ans = 32b0100;
+            32:  a = h00000004; b = 0; alufn = 6b100000; ans = h00000004; // Zero shift: no change
+            33:  a = 1; b = 31; alufn = 6b100000; ans = h80000000; // Maximum shift: 1 shifted left by 31 bits
+            34:  a = h80000000; b = 1; alufn = 6b100000; ans = 0; // Boundary: shifting a number with MSB set results in loss of that bit      
+            
+            // SHR (0x21)
+            35:  a = h00000004; b = 0; alufn = 6b100001; ans = h00000004; // Zero shift: no change
+            36:  a = h80000000; b = 31; alufn = 6b100001; ans = 1; // Maximum shift: 0x80000000 shifted right by 31 yields 1
+            37:  a = hF0000000; b = 4; alufn = 6b100001; ans = h0F000000; // Logical shift: vacated bits are filled with 0
+            38: a = 32b1000; b = 2; alufn = 6b100001; ans = 32b0010;
+            
+            // SRA (0x23)
+            40: a = 32b10000000; b = 2; alufn = 6b100011; ans = 32b11100000; // Arithmetic shift keeps sign bit
+            
+            // CMPEQ (0x33)
+            41: a = 7; b = 7; alufn = 6b110011; ans = 1;   // Should be true
+            42: a = 5; b = 7; alufn = 6b110011; ans = 0;   // Should be false
+            
+            // CMPLT (0x35)
+            43: a = 5; b = 7; alufn = 6b110101; ans = 1;   // Less than test
+            44: a = 8; b = 6; alufn = 6b110101; ans = 0;   // Greater than test
+            
+            // CMPLE (0x37)
+            45: a = 5; b = 5; alufn = 6b110111; ans = 1;   // Less than or equal test
+            46: a = 9; b = 5; alufn = 6b110111; ans = 0;   // Greater than test
+            
+            // Default (NOP)
+            default: a = 0; b = 0; alufn = 0; ans = 0;
+        }
+        
+        ele_a = a;
+        ele_b = b;
+        ele_alufn = alufn;
+        ex_ans = ans;
+    }
+}
