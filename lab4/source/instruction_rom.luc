@@ -9,9 +9,35 @@ output numinstr[10]
     // Driver code, the bottommost instruction is the first instruction
     // CHECKOFF: write your own test instruction fulfilling the requirements written in the lab handout
     const INSTRUCTIONS = {
-        32h77FFFFFF // 0x000 BEQ(R31, 0, R31) 
+       // 32h77FFFFFF // 0x000 BEQ(R31, 0, R31) 
+        
+        // Test instruction
+        //32h7BE3FFFB, // 0x010 BNE(R3, main, R31) 
+        //32h607F0020, // 0x00C LD(R31, 32, R3) 
+        //32h643F0020, // 0x008 ST(R1, 32, R31)
+        //32h90410800, // 0x004 CMPEQ(R1, R1, R2) 
+        //32hC03F0003 // 0x000 ADDC(R31, 3, R1) --- main\
+        
+        /*
+        temp = 25
+        a = mem[16]
+        if a != 35:
+            temp_c = 10
+            temp = temp + temp_c
+        mem[16] = temp
+        */
+        
+       32h6CE00000,  // 0x20 JMP(0x00, R7)        - Loop                           011011 00111 00000 0000000000000000
+       32h643F0010,  // 0x1C ans: ST(R1, R31, 16) - Store R1 (temp or temp+10)     011001 00001 11111 0000000000010000
+       32h80213000,  // 0x18 ADD(R1, R6, R1)      - temp += 10                     100000 00001 00001 00110 00000000000
+       32hC0DF000A,  // 0x14 ADDC(R31, 10, R6)    - R6 = 10                        110000 00110 11111 0000000000001010
+       32h78A40002,  // 0x10 BNE(R4, ans, R5)     - If R4 != 0, skip to store      011110 00101 00100 0000000000000010
+       32h90821800,  // 0x0C CMPEQ(R2, R3, R4)    - R2 == R3  store z (1 if equal) 100100 00100 00010 00011 00000000000
+       32hC07F0023,  // 0x08 ADDC(R31, 35, R3)    - R3 = 35                        110000 00011 11111 0000000000100011
+       32h605F0010,  // 0x04 LD(R31, 16, R2)      - Load to R2 from memory[16]     011000 00010 11111 0000000000010000
+       32hC03F0019   // 0x00 ADDC(R31, 25, R1)    - R1 = temp = 25                 110000 00001 11111 0000000000011001
     }
-    
+
     const NUM_OF_INSTRUCTIONS = $width(INSTRUCTIONS,0) // compute how many instructions are there
     
     always {

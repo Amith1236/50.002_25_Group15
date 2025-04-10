@@ -16,7 +16,7 @@ module alu_auto_tester#(
 ) {
     
     const SIZE = 32
-    const SLOW_CLOCK_DEFAULT_SPEED = $is_sim() ? 8 : 28
+    const SLOW_CLOCK_DEFAULT_SPEED = $is_sim() ? 8 : 25
     
     sig address[32]
     sig ex_ans_rom[32]
@@ -98,9 +98,9 @@ module alu_auto_tester#(
         alu.b = b_rom.q
         alu.alufn = alufn_rom.q
         
-        io_led_0 = 0
-        io_led_1 = 0
-        io_led_2 = 0
+        io_led_0 = a_rom.q[7:0]
+        io_led_1 = a_rom.q[31:24]
+        io_led_2 = alufn_rom.q 
         io_segment = 0
         io_select = 4hF
         state_no = main_auto_states.q
@@ -150,23 +150,29 @@ module alu_auto_tester#(
                 }
                 
             Main_auto.READ_AND_SHOW:
+                
                 a_rom.d = rom.ele_a
                 b_rom.d = rom.ele_b
                 alufn_rom.d = rom.ele_alufn
                 ex_ans_rom = rom.ex_ans
                
-                prcs_alu_ans = alu.out ^ c{(SIZE-8)x{b0},io_dip_bin}
                 
+                prcs_alu_ans = alu.out ^ c{(SIZE-8)x{b0},io_dip_bin}
                 error_str.d = | (prcs_alu_ans ^ ex_ans_rom)
+                
+                
                 if (slow_clock_edge.out){
                 main_auto_states.d = Main_auto.DISPLAY_A
                 }
             
             Main_auto.DISPLAY_A:
+                
+                //display a digits
                 io_led_2 = alufn_rom.q 
                 io_led_1 = a_rom.q[31:24]
                 io_led_0 = a_rom.q[7:0]
                 a_b_out = 1
+                
                 seven_seg_display = error_str.q * 1000 + a_b_out * d100 + auto_cycling_counter.q
                 
                 if (slow_clock_edge.out){
@@ -174,6 +180,7 @@ module alu_auto_tester#(
                 }
             
             Main_auto.DISPLAY_B:
+                //display b digits
                 io_led[2][5:0] = alufn_rom.q 
                 io_led[1] = b_rom.q[31:24]
                 io_led[0] = b_rom.q[7:0]
@@ -184,6 +191,7 @@ module alu_auto_tester#(
                 }
             
             Main_auto.DISPLAY_OUT:
+                //display output digits
                 io_led[2][5:0] = alufn_rom.q 
                 io_led[1] = alu.out[31:24]
                 io_led[0] = alu.out[7:0]

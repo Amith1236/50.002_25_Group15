@@ -8,6 +8,7 @@ module alu (
     output n
 ) {
     
+    //initialising modules
     adder add(#SIZE(32))
     multiplier mul
     boolean bool(#SIZE(32))

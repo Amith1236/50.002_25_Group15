@@ -32,8 +32,10 @@ module pc_unit (
         
         // TASK 4
         // shift-and-add pc by 4
-        pc_4sxtc32_sig = pc.q + 4 + (4 * c{16x{id[15]}, id[15:0]})
-        pc_4_sxtc = c{pc.q[31], pc_4sxtc32_sig[30:2]}
+        //pc_4sxtc32_sig = pc.q + 4 + (4 * c{16x{id[15]}, id[15:0]})
+        //pc_4_sxtc = c{pc.q[31], pc_4sxtc32_sig[30:2]}
+        pc_4sxtc32_sig = pc.q + 4 + c{14x{id[15]}, id[15:0], b00}
+        pc_4sxtc_sig = c{pc.q[31], pc_4sxtc32_sig[30:0]} //  preserve bit 31 of the original pc
         
         // TASK 1 
         // PCSEL mux 
